@@ -44,6 +44,9 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
 
+    - name: Create test-results directory
+      run: mkdir -p test-results
+
     - name: Run SEO Audit
       run: npm run test:seo
       env:
@@ -55,14 +58,20 @@ jobs:
         MIN_BP: ${{ vars.MIN_BP || '0.1' }}
         MIN_SEO: ${{ vars.MIN_SEO || '0.1' }}
 
-    - name: Upload SEO Report
+    - name: Upload HTML Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: seo-report-${{ matrix.form-factor }}-${{ github.run_number }}
-        path: |
-          playwright-report/
-          seo-report*.html
+        name: seo-html-report-${{ matrix.form-factor }}-${{ github.run_number }}
+        path: playwright-report/
+        retention-days: 90
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: seo-test-results-${{ matrix.form-factor }}-${{ github.run_number }}
+        path: test-results/
         retention-days: 90
 
     - name: Comment PR with results
