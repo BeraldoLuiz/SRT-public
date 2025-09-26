@@ -33,6 +33,9 @@ jobs:
     - name: Check for outdated packages
       run: npm outdated || true
 
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install -y jq
+
     - name: Run dependency check
       run: |
         echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
@@ -40,14 +43,14 @@ jobs:
         echo "### Dependency Status" >> $GITHUB_STEP_SUMMARY
         npm audit --audit-level=moderate --json > audit-results.json || true
         if [ -f audit-results.json ]; then
-          vulnerabilities=$(jq '.metadata.vulnerabilities.total' audit-results.json)
+          vulnerabilities=$(jq '.metadata.vulnerabilities.total' audit-results.json 2>/dev/null || echo "0")
           echo "- **Total vulnerabilities:** $vulnerabilities" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Outdated Packages" >> $GITHUB_STEP_SUMMARY
         npm outdated --json > outdated.json || true
         if [ -f outdated.json ]; then
-          outdated_count=$(jq 'length' outdated.json)
+          outdated_count=$(jq 'length' outdated.json 2>/dev/null || echo "0")
           echo "- **Outdated packages:** $outdated_count" >> $GITHUB_STEP_SUMMARY
         fi
 

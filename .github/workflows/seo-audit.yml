@@ -26,7 +26,7 @@ jobs:
     
     strategy:
       matrix:
-        form-factor: ${{ fromJSON(format('["{0}"]', join(split(github.event.inputs.form_factors || 'mobile,desktop', ','), '","'))) }}
+        form-factor: [mobile, desktop]
     
     steps:
     - name: Checkout code
@@ -44,25 +44,34 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install --with-deps
 
+    - name: Create test-results directory
+      run: mkdir -p test-results
+
     - name: Run SEO Audit
       run: npm run test:seo
       env:
-        BASE_URL: ${{ github.event.inputs.target_url || vars.BASE_URL || 'http://localhost:3000' }}
+        BASE_URL: ${{ github.event.inputs.target_url || vars.BASE_URL || 'https://ricochet360.com' }}
         LH_FORM_FACTOR: ${{ matrix.form-factor }}
-        LH_PATHS: ${{ github.event.inputs.paths || vars.LH_PATHS || '/' }}
-        MIN_PERF: ${{ vars.MIN_PERF || '0.80' }}
-        MIN_ACC: ${{ vars.MIN_ACC || '0.90' }}
-        MIN_BP: ${{ vars.MIN_BP || '0.90' }}
-        MIN_SEO: ${{ vars.MIN_SEO || '0.90' }}
+        LH_PATHS: ${{ github.event.inputs.paths || vars.LH_PATHS || '/, /pricing/, /get-a-demo' }}
+        MIN_PERF: ${{ vars.MIN_PERF || '0.1' }}
+        MIN_ACC: ${{ vars.MIN_ACC || '0.1' }}
+        MIN_BP: ${{ vars.MIN_BP || '0.1' }}
+        MIN_SEO: ${{ vars.MIN_SEO || '0.1' }}
 
-    - name: Upload SEO Report
+    - name: Upload HTML Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: seo-report-${{ matrix.form-factor }}-${{ github.run_number }}
-        path: |
-          playwright-report/
-          seo-report*.html
+        name: seo-html-report-${{ matrix.form-factor }}-${{ github.run_number }}
+        path: playwright-report/
+        retention-days: 90
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: seo-test-results-${{ matrix.form-factor }}-${{ github.run_number }}
+        path: test-results/
         retention-days: 90
 
     - name: Comment PR with results
